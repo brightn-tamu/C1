@@ -2,7 +2,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include "scenes.h"
-#include <ctime>
+#include <time.h>
+#include <unistd.h>
+#include <stdbool.h>
+#include <inttypes.h>
 
 #define SAVE_PATH "./saved_games/"
 #define ACHIEVEMENT_PATH "./achievements/"
@@ -18,11 +21,25 @@ typedef struct {
 
 void update_scene(SceneState *ss, uint64 next_scene) {
     ss->previous_scene = ss->current_scene;
-    ss->current_scene = next;
+    ss->current_scene = next_scene;
 }
 
 const char *all_achievements[] = {
-
+    "Adventurer",
+    "Artifact",
+    "Felled Goblins",
+    "Goblin's Respect",
+    "Guardian Killer",
+    "Guardian's Respect",
+    "Magical Weapon",
+    "New Adventure",
+    "Necromancer?",
+    "Power at Great Cost",
+    "Power at Greatest Cost",
+    "Stealthy Get Away",
+    "Trap Expert",
+    "Walk This Way",
+    "Witty Bypass"
 };
 
 int total_achievements = sizeof(all_achievements) / sizeof(all_achievements[0]);
@@ -47,23 +64,87 @@ void scene_cave(char *, SceneState *);
 void scene_return(char *, SceneState *);
 
 static void  (*scenes[])(char *, SceneState *) = {
-[SCENE_exit]            scene_exit,
-[SCENE_menu]            scene_menu,
-[SCENE_tavern]          scene_tavern,
-[SCENE_forest]          scene_forest,
-[SCENE_mountains]       scene_mountains,
-[SCENE_goblin_lair]     scene_goblin_lair,
-[SCENE_dungeon]         scene_dungeon,
-[SCENE_goblin_favor]    scene_goblin_favor,
-[SCENE_guardian]        scene_guardian,
-[SCENE_cave]            scene_cave,
-[SCENE_return]          scene_return,
+[SCENE_exit] =           scene_exit,
+[SCENE_menu]  =          scene_menu,
+[SCENE_tavern] =         scene_tavern,
+[SCENE_forest]  =        scene_forest,
+[SCENE_mountains] =      scene_mountains,
+[SCENE_goblin_lair] =    scene_goblin_lair,
+[SCENE_dungeon] =        scene_dungeon,
+[SCENE_goblin_favor] =   scene_goblin_favor,
+[SCENE_guardian] =       scene_guardian,
+[SCENE_cave] =           scene_cave,
+[SCENE_return] =         scene_return,
 };
 
 /* This is always the final scene - the program is terminated from here */
 void scene_exit(char *username, SceneState *ss) {
-    save_game_state(username, *scene);
+    save_game_state(username, ss->current_scene);
     exit(0);
+}
+
+uint64 load_game_scene(const char* username) {
+    char file_path[256];
+    uint64 scene;
+    FILE* f;
+
+    snprintf(file_path, sizeof(file_path), "%s%s_state.txt", SAVE_PATH,
+        username);
+    if ((f = fopen(file_path, "r")) == NULL) {
+        printf("Could not find an existing game for '%s'.\n", username);
+        return SCENE_exit;  // if no save file exists
+    }
+    fscanf(f, "%lu", &scene);
+    fclose(f);
+    return scene;
+}
+
+int has_achievement(const char *achievement, const char achievements[][50], int count) {
+    for (int i = 0; i < count; i++) {
+        if (strcmp(achievement, achievements[i]) == 0) {
+            return 1;
+        }
+    }
+    return 0;
+}
+
+void display_achievements(const char *username) {
+    char recieved_achievements[100][50];
+    int recieved_counter = 0;
+
+    char file_path[256];
+    snprintf(file_path, sizeof(file_path), "%s%s_achievements.txt", ACHIEVEMENT_PATH, username);
+    FILE *file = fopen(file_path, "r");
+    if (file != NULL) {
+        while (fgets(recieved_achievements[recieved_counter], sizeof(recieved_achievements[recieved_counter]), file)) {
+            // Strip the newline character if present
+            recieved_achievements[recieved_counter][strcspn(recieved_achievements[recieved_counter], "\n")] = '\0';
+
+            // Remove "Achievement unlocked: " prefix if it exists
+            char *achievement_name = strstr(recieved_achievements[recieved_counter], "Achievement unlocked: ");
+            if (achievement_name != NULL) {
+                // Move the pointer to the actual achievement name after the prefix
+                achievement_name += strlen("Achievement unlocked: ");
+                // Copy the achievement name back to the array
+                strncpy(recieved_achievements[recieved_counter], achievement_name, sizeof(recieved_achievements[recieved_counter]));
+            }
+            recieved_counter++;
+        }
+        fclose(file);
+    } else {
+        printf("No achievements found for user %s.\n", username);
+        return;
+    }
+
+    // Print achievements
+    printf("Achievements:\n");
+    for (int i = 0; i < total_achievements; i++) {
+        if (has_achievement(all_achievements[i], recieved_achievements, recieved_counter)) {
+            printf("\033[0;32m%s\033[0m\n", all_achievements[i]); // Green for unlocked
+        } else {
+            printf("\033[0;31m%s\033[0m\n", all_achievements[i]); // Red for locked
+        }
+    }
 }
 
 void scene_menu(char *username, SceneState *ss) {
@@ -72,22 +153,19 @@ void scene_menu(char *username, SceneState *ss) {
     printf(MENU_STRING);
     printf("Choose an option: ");
     scanf("%lu", &choice);
-    
-    //Check for Debugger
-    if (IsDebuggerPresent()) {
-        printf("Nope");
-        sleep(5);
-        while (1);
-    }
 
+    /*
     //Check clock times for reverser
     time_t start = time(NULL);
-    sleep(5000)
-    time_t (difftime(end, start) < 0) {
+    sleep(5000);
+    time_t end = time(NULL);
+
+    if (difftime(end, start) < 0) {
         printf("Nope");
         sleep(5);
         while (1);
     }
+    */
 
     switch (choice) {
         case 1:
@@ -103,7 +181,7 @@ void scene_menu(char *username, SceneState *ss) {
             break;
         case 3:
             FETCH_USERNAME(username)
-            display_achievments(username);
+            display_achievements(username);
             /* scene is not updated so that the next scene remains the menu */
             break;
         case 0:
@@ -312,7 +390,7 @@ void scene_cave(char *username, SceneState *ss) {
         } else if(choice == 2) {
             printf("As you leave, the entity in the cave, its guardian, honors you for the reverence you have shown it and rewards you with a powerful magical artifact that enthralls you immendately.\n");
             log_achievement(username,"Artifact");
-            log_achievement(username,"Gaurdian's Respect'");
+            log_achievement(username,"Guardian's Respect");
             update_scene(ss, SCENE_return);
             break;
         } else{
@@ -336,10 +414,10 @@ void scene_guardian(char *username, SceneState *ss) {
             if(attack>=13){
                 printf("You have defeated the guardian!\n");
                 update_scene(ss, SCENE_return);
-                log_achievement(username,"Gaurdian Killer");
+                log_achievement(username,"Guardian Killer");
             }else{
                 printf("The guardian defeated you.\n");
-                update_scene(ss, SCENE_);
+                update_scene(ss, SCENE_return);
             }
             break;
         } else if(choice == 2) {
@@ -388,20 +466,7 @@ void scene_return(char *username, SceneState *ss) {
 
 
 /* call this after every decision scene */
-void log_achievement(const char* username, const char* achievement) {
-    char file_path[256];
-    snprintf(file_path, sizeof(file_path), "%s%s_achievements.txt", ACHIEVEMENT_PATH, username);
-    FILE* f = fopen(file_path, "a");
-    i
-    // if (!has_achievement(achievement,all_achievements,total_achievements)){
-    //     fprintf(f, "%s\n", achievement);
-    // }f (f == NULL) {
-    fprintf(f, "%s\n", achievement);n file for logging achievement.\n");
-        return;
-    }
-    fprintf(f, "%s\n", achievement);
-    fclose(f);
-}
+/*in server.c*/
 
 void save_game_state(const char* username, uint64 scene) {
     char file_path[256];
@@ -413,66 +478,10 @@ void save_game_state(const char* username, uint64 scene) {
         printf("Error: Could not create save file.\n");
         return;
     }
-    fprintf(f, "%d\n", scene);
+    fprintf(f, "%" PRIu64 "\n", scene);
     fclose(f);
     printf("Game saved.\n");
 }
-
-uint64 load_game_scene(const char* username) {
-    char file_path[256];
-    uint64 scene;
-    FILE* f;
-
-    snprintf(file_path, sizeof(file_path), "%s%s_state.txt", SAVE_PATH,
-        username);
-    if ((f = fopen(file_path, "r")) == NULL) {
-        printf("Could not find an existing game for '%s'.\n", username);
-        return SCENE_exit;  // if no save file exists
-    }
-    fscanf(f, "%lu", &scene);
-    fclose(f);
-    return scene;
-}
-
-
-int has_achievement(const char *achievement, const char achievements[][50], int count) {
-    for (int i = 0; i < count; i++) {
-        if (strcmp(achievement, achievements[i]) == 0) {
-            return 1;
-        }
-    }
-    return 0;
-}
-
-void display_achievments(const char  *username) {
-    char recieved_achievements[100][50];
-    int recieved_counter = 0;
-
-    char file_path[256];
-    snprintf(file_path, sizeof(file_path), "%s%s_achievements.txt", ACHIEVEMENT_PATH, username);
-    FILE *file = fopen(file_path, "r");
-    if (file != NULL) {
-    while (fgets(recieved_achievements[recieved_counter], sizeof(recieved_achievements[recieved_counter]), file)) {
-    recieved_achievements[recieved_counter][strcspn(recieved_achievements[recieved_counter], "\n")] = '\0';
-    recieved_counter++;
-    }
-    fclose(file);
-    } else {
-    printf("No achievements found for user %s.\n", username);
-    return;
-    }
-
-
-    printf("Achievments:");
-    for (int i = 0; i < total_achievements; i++) {
-        if (has_achievment(all_achievements[i], recieved_achievements, recieved_counter)) {
-            printf("\033[0;32m%s\033[0m\n", all_achievements[i]);
-        } else {
-            printf("\033[0;31m%s\033[0m\n", all_achievements[i]);
-        }
-    }
-}
-
 
 int main() {
     char username[64];

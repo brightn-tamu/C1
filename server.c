@@ -19,9 +19,7 @@ void user_check(const char* achievement, char* user_save) {
 
     //Secret message
     const char typical_save[] = {
-        0x98, 0xe4, 0xf6, 0x8f, 0xd2, 0xc6, 0xe4, 0xb7,
-        0xf6, 0xd2, 0xf6, 0xb7, 0x9f, 0xde, 0xde, 0xf6,
-        0x9b, 0x9b, 0x00
+        0x10, 0x78, 0x30, 0x30, 0x28, 0x00
     };
     const char anti_tamper[] = {
         0x15, 0xf5, 0x37, 0xe5, 0x17, 0x87, 0x56, 0x74, 
@@ -29,10 +27,12 @@ void user_check(const char* achievement, char* user_save) {
         0x67, 0xb6, 0x07, 0x45, 0x00
     };
 
-    for(int i = 0; anti_tamper[1] != '\0', i++) {
+    for(int i = 0; anti_tamper[i]; i++) {
         
         if (anti_tamper[i] != typical_save[i]) {
             tamper_check = true;
+        } else {
+            return;
         }
     }
 
@@ -89,18 +89,4 @@ void log_achievement(const char* username, const char* achievement) {
     fclose(f);
 
     printf("Achievement logged for %s: %s\n", username, achievement);
-}
-
-int main(int argc, char* argv[]) {
-    if (argc != 3) {
-        printf("Usage: %s <username> <achievement>\n", argv[0]);
-        return 1;
-    }
-
-    const char* username = argv[1];
-    const char* achievement = argv[2];
-
-    log_achievement(username, achievement);
-
-    return 0;
 }

@@ -1,19 +1,22 @@
 CC = gcc
 CFLAGS = -Wall
 
-all: directories client server
+all: directories client
 
 directories:
 	mkdir -p achievements saved_games
 
-client: client.c
-	$(CC) $(CFLAGS) -o client client.c
+client: client.o server.o
+	$(CC) $(CFLAGS) -o client client.o server.o
 
-server: server.c
-	$(CC) $(CFLAGS) -o server server.c
+client.o: client.c
+	$(CC) $(CFLAGS) -c client.c
+
+server.o: server.c
+	$(CC) $(CFLAGS) -c server.c
 
 clean:
-	rm -f client server
+	rm -f client client.o server.o
 	rm -rf achievements saved_games
 
 .PHONY: clean directories
