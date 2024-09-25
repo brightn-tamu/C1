@@ -1,0 +1,129 @@
+
+________________________________________________________________________________________________________________
+### Scene 1: The Tavern
+*Setting:* The player finds themselves in a dimly lit tavern, filled with rowdy patrons. 
+A hooded figure sits in the corner, gesturing for the player to approach.
+
+**Choice A:** Sit down with the hooded figure.  
+**Outcome:** The figure offers a dangerous quest to retrieve an ancient artifact from a cursed dungeon. 
+
+--> (Leads to Scene 2: The Forest.)
+
+**Choice B:** Ignore the figure and stay at the bar.  
+**Outcome:** The bartender whispers of a different rumor—a lost treasure hidden deep in the mountains. 
+
+--> (Leads to Scene 3: The Mountains.)
+________________________________________________________________________________________________________________
+### Scene 2: The Forest
+*Setting:* Deep in the eerie, dark woods, the player is on their way to the cursed dungeon when they hear rustling in the bushes.
+
+**Choice A:** Investigate the noise.  
+**Outcome:** The player encounters a group of goblins preparing an ambush. 
+If they fight and win, they gain valuable loot. If they lose, they are captured by the goblins. 
+
+--> (Leads to Scene 4: Goblin Lair or Scene 5: Dungeon.)
+
+**Choice B:** Ignore the noise and keep moving.  
+**Outcome:** The player safely arrives at the dungeon entrance, but something watches them from the shadows. 
+
+--> (Leads to Scene 5: Dungeon.)
+
+________________________________________________________________________________________________________________
+### Scene 3: The Mountains
+*Setting:* The player traverses treacherous mountain paths, the wind howling around them, 
+when they come across an injured traveler lying on the ground.
+
+**Choice A:** Help the traveler.  
+**Outcome:** The traveler reveals themselves to be a powerful wizard, rewarding the player with a magical weapon. 
+
+--> (Leads to Scene 6: Treasure Cave.)
+
+**Choice B:** Leave the traveler.  
+**Outcome:** The player reaches the treasure cave but encounters a deadly trap. 
+
+--> (Leads to Scene 6: Treasure Cave.)
+
+________________________________________________________________________________________________________________
+### Scene 4: Goblin Lair
+*Setting:* The player is tied up in a grimy goblin cave, surrounded by laughing goblins.
+
+**Choice A:** Attempt to break free.  
+**Outcome:** The player escapes the goblins but loses some equipment in the process. 
+
+--> (Leads to Scene 5: Dungeon.)
+
+**Choice B:** Bargain with the goblin chief.  
+**Outcome:** The goblin chief offers the player a deal: perform a task for them, and they will let the player go. 
+
+--> (Leads to Scene 7: Goblin Favor.)
+
+________________________________________________________________________________________________________________
+### Scene 5: Dungeon
+*Setting:* The cursed dungeon looms before the player, filled with traps, monsters, and treasure.
+
+**Choice A:** Enter cautiously.  
+**Outcome:** The player avoids most traps but faces a powerful guardian at the end. 
+
+--> (Leads to Scene 8: Dungeon Guardian.)
+
+**Choice B:** Charge in boldly.  
+**Outcome:** The player takes more damage from traps but can surprise the dungeon guardian. 
+
+--> (Leads to Scene 8: Dungeon Guardian.)
+
+________________________________________________________________________________________________________________
+### Scene 6: Treasure Cave
+*Setting:* The player finally reaches the cave filled with treasure but senses a magical presence guarding it.
+
+**Choice A:** Take the treasure.  
+**Outcome:** The guardian of the cave awakens, forcing the player into a deadly battle. 
+
+--> (Leads to Scene 9: Cave Guardian.)
+
+**Choice B:** Leave the treasure.  
+**Outcome:** The player leaves but gains the respect of the cave guardian, who offers them a rare artifact. 
+
+--> (Leads to Final Scene.)
+
+________________________________________________________________________________________________________________
+### Scene 7: Goblin Favor
+*Setting:* The goblin chief asks the player to retrieve a stolen item from a rival tribe of kobolds.
+
+**Choice A:** Accept the task.  
+**Outcome:** The player infiltrates the kobold camp, retrieves the item, and gains the trust of the goblins. 
+
+--> (Leads to Final Scene.)
+
+**Choice B:** Refuse the task.  
+**Outcome:** The goblins attempt to kill the player, forcing them to escape in a dramatic chase. 
+
+--> (Leads to Scene 5: Dungeon.)
+
+________________________________________________________________________________________________________________
+### Scene 8: Dungeon Guardian
+*Setting:* The player faces the dungeon’s final guardian, a massive stone golem protecting the artifact.
+
+**Choice A:** Fight the golem head-on.  
+**Outcome:** A tough battle ensues, but if the player wins, they gain the cursed artifact and complete the quest. 
+
+--> (Leads to Final Scene.)
+
+**Choice B:** Use wit to bypass the golem.  
+**Outcome:** The player tricks the golem into letting them pass, 
+avoiding a dangerous fight and securing the artifact. 
+
+--> (Leads to Final Scene.)
+
+________________________________________________________________________________________________________________
+### Final Scene: Return to the Tavern
+*Setting:* The player returns to the tavern, their quest complete. 
+The hooded figure watches them with a knowing smile.
+
+**Choice A:** Keep the artifact for yourself.  
+**Outcome:** The artifact's dark magic begins to corrupt the player over time, setting up a future adventure.
+
+**Choice B:** Hand over the artifact.  
+**Outcome:** The hooded figure thanks the player and vanishes, leaving behind a cryptic message of future quests.
+
+
+

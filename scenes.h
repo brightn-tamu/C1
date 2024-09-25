@@ -1,0 +1,12 @@
+// Scene numbers
+#define SCENE_exit           0
+#define SCENE_menu           1
+#define SCENE_tavern         2
+#define SCENE_forest         3
+#define SCENE_mountains      4
+#define SCENE_goblin_lair    5
+#define SCENE_dungeon        6
+#define SCENE_goblin_favor   7
+#define SCENE_guardian       8
+#define SCENE_cave           9
+#define SCENE_return         10
