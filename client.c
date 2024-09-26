@@ -9,29 +9,41 @@
 
 #define SAVE_PATH "./saved_games/"
 #define ACHIEVEMENT_PATH "./achievements/"
+#define MAX_ACHIEVEMENT_LENGTH 50
 
-#define MENU_STRING "Welcome!\n1. Start a new game\n2. Load an existing game\n3. View achievements\n0. Exit\n"
-#define FETCH_USERNAME(dest) printf("Enter a username: "); scanf("%s", dest);
 
+typedef unsigned short uint16;
 typedef unsigned long uint64;
 typedef struct {
     uint64 current_scene;
     uint64 previous_scene;
 } SceneState;
 
-void update_scene(SceneState *ss, uint64 next_scene) {
-    ss->previous_scene = ss->current_scene;
-    ss->current_scene = next_scene;
+/* std in/out helper functions */
+void prompt(const char *s, const char *format, void *dest) {
+    printf("%s", s);
+    scanf(format, dest);
 }
 
-const char *all_achievements[] = {
-    "Adventurer",
+void clear_console() {
+    system("clear");
+}
+
+void update_scene(SceneState *ss, uint64 next_scene, int clear) {
+    ss->previous_scene = ss->current_scene;
+    ss->current_scene = next_scene;
+    if (clear) clear_console();
+}
+
+const char all_achievements[][50] = {
     "Artifact",
     "Felled Goblins",
+    "Forester",
     "Goblin's Respect",
     "Guardian Killer",
     "Guardian's Respect",
     "Magical Weapon",
+    "Mountaineer",
     "New Adventure",
     "Necromancer?",
     "Power at Great Cost",
@@ -46,9 +58,11 @@ int total_achievements = sizeof(all_achievements) / sizeof(all_achievements[0]);
 
 
 // forward declarations of helper functions
+uint64 load_game_scene(const char *);
+void display_achievements(const char *username);
+void if_log_achievement(const char *, const char *);
 void log_achievement(const char *, const char *);
 void save_game_state(const char *, uint64);
-void display_achievments(const char *);
 
 // forward declaration for scenes array
 void scene_exit(char *, SceneState *);
@@ -79,80 +93,22 @@ static void  (*scenes[])(char *, SceneState *) = {
 
 /* This is always the final scene - the program is terminated from here */
 void scene_exit(char *username, SceneState *ss) {
-    save_game_state(username, ss->current_scene);
+    save_game_state(username, ss->previous_scene);
     exit(0);
 }
 
-uint64 load_game_scene(const char* username) {
-    char file_path[256];
-    uint64 scene;
-    FILE* f;
-
-    snprintf(file_path, sizeof(file_path), "%s%s_state.txt", SAVE_PATH,
-        username);
-    if ((f = fopen(file_path, "r")) == NULL) {
-        printf("Could not find an existing game for '%s'.\n", username);
-        return SCENE_exit;  // if no save file exists
-    }
-    fscanf(f, "%lu", &scene);
-    fclose(f);
-    return scene;
-}
-
-int has_achievement(const char *achievement, const char achievements[][50], int count) {
-    for (int i = 0; i < count; i++) {
-        if (strcmp(achievement, achievements[i]) == 0) {
-            return 1;
-        }
-    }
-    return 0;
-}
-
-void display_achievements(const char *username) {
-    char recieved_achievements[100][50];
-    int recieved_counter = 0;
-
-    char file_path[256];
-    snprintf(file_path, sizeof(file_path), "%s%s_achievements.txt", ACHIEVEMENT_PATH, username);
-    FILE *file = fopen(file_path, "r");
-    if (file != NULL) {
-        while (fgets(recieved_achievements[recieved_counter], sizeof(recieved_achievements[recieved_counter]), file)) {
-            // Strip the newline character if present
-            recieved_achievements[recieved_counter][strcspn(recieved_achievements[recieved_counter], "\n")] = '\0';
-
-            // Remove "Achievement unlocked: " prefix if it exists
-            char *achievement_name = strstr(recieved_achievements[recieved_counter], "Achievement unlocked: ");
-            if (achievement_name != NULL) {
-                // Move the pointer to the actual achievement name after the prefix
-                achievement_name += strlen("Achievement unlocked: ");
-                // Copy the achievement name back to the array
-                strncpy(recieved_achievements[recieved_counter], achievement_name, sizeof(recieved_achievements[recieved_counter]));
-            }
-            recieved_counter++;
-        }
-        fclose(file);
-    } else {
-        printf("No achievements found for user %s.\n", username);
-        return;
-    }
-
-    // Print achievements
-    printf("Achievements:\n");
-    for (int i = 0; i < total_achievements; i++) {
-        if (has_achievement(all_achievements[i], recieved_achievements, recieved_counter)) {
-            printf("\033[0;32m%s\033[0m\n", all_achievements[i]); // Green for unlocked
-        } else {
-            printf("\033[0;31m%s\033[0m\n", all_achievements[i]); // Red for locked
-        }
-    }
-}
 
 void scene_menu(char *username, SceneState *ss) {
-    uint64 choice;
+    uint16 choice = 0;
 
-    printf(MENU_STRING);
-    printf("Choose an option: ");
-    scanf("%lu", &choice);
+    prompt("Welcome!\n"\
+            "1. Start a new game\n"\
+            "2. Load an existing game\n"\
+            "3. View achievements\n"\
+            "9. Exit\n"\
+            "Choose an option: ",
+            "%hu",
+            &choice);
 
     /*
     //Check clock times for reverser
@@ -169,297 +125,371 @@ void scene_menu(char *username, SceneState *ss) {
 
     switch (choice) {
         case 1:
-            FETCH_USERNAME(username)
-            update_scene(ss, SCENE_tavern); // tavern is the first scene
+            prompt("Enter a username: ", "%s", username);
+            update_scene(ss, SCENE_tavern, 1); // tavern is the first scene
             break;
         case 2:
-            FETCH_USERNAME(username);
+            prompt("Enter a username: ", "%s", username);
+            clear_console();
             if (( (ss->current_scene = load_game_scene(username)) == SCENE_exit)) {
-                printf("Please try again.\n\n");
+                printf("Could not find an existing game for user '%s'.\n\n", username);
                 ss->current_scene = SCENE_menu; // reset the scene to menu
             }
             break;
         case 3:
-            FETCH_USERNAME(username)
+            prompt("Enter a username: ", "%s", username);
+            clear_console();
             display_achievements(username);
             /* scene is not updated so that the next scene remains the menu */
             break;
-        case 0:
+        case 9:
             printf("Exiting game.\n");
             exit(0);
         default:
-            printf("Invalid choice. Try again.\n");
+            clear_console();
             /* again, scene not updated to keep the menu showing */
-        break;
+            printf("'%hu' is an invalid choice. Try again.\n\n", choice);
+            break;
     }
 }
 
 
-/* the scene one function basically */
 void scene_tavern(char *username, SceneState *ss) {
-    int choice;
+    uint16 choice = 0;
 
-    printf("The you find yourself in a dimly lit tavern, filled with rowdy patrons. A hooded figure sits in the corner, gesturing for you to approach.\n");
-    printf("What do you do?\n");
-    printf("1. Sit down with the hooded figure.\n");
-    printf("2. Ignore the figure and stay at the bar.\n");
+    prompt("You find yourself in a dimly lit tavern, filled with rowdy patrons. A hooded figure sits in the corner, gesturing for you to approach.\n"\
+           "What do you do?\n"\
+           "1. Sit down with the hooded figure.\n"\
+           "2. Ignore the figure and stay at the bar.\n"\
+           "9. Save and exit.\n"\
+           "Choose an option: ",
+           "%hu",
+           &choice);
 
-    while(true) {
-        scanf("%d", &choice);
-        if (choice == 1) {
-            printf("The figure offers a dangerous quest to retrieve an ancient artifact from a cursed dungeon. \n");
-            update_scene(ss, SCENE_forest);
-            log_achievement(username,"Adventurer");
+    switch(choice) {
+        case 1:
+            update_scene(ss, SCENE_forest, 1);
+            if_log_achievement(username, "Forester");
+            printf("The figure offers a dangerous quest to retrieve an ancient artifact from a cursed dungeon.\n");
             break;
-        } else if (choice == 2) {
-            printf("You ignore the man but instead hear the bartender's whispers of a rumor, a lost treasure hidden deep in the mountains. \n");
+        case 2:
+            update_scene(ss, SCENE_mountains, 1);
+            if_log_achievement(username, "Mountaineer");
+            printf("You ignore the man but instead hear the bartender's whispers of a rumor, a lost treasure hidden deep in the mountains.\n");
             printf("You leave to find this treasure.\n");
-            update_scene(ss, SCENE_mountains);
-            log_achievement(username,"Adventurer");
             break;
-        } else {
-            printf("Not a Valid Choice. \n");
-        }
+        case 9:
+            printf("Exiting game.\n");
+            update_scene(ss, SCENE_exit, 0);
+            break;
+        default:
+            clear_console();
+            printf("'%hu' is an invalid choice. Try again.\n\n", choice);
+            break;
     }
 }
 
-void scene_forest(char *username, SceneState *ss){
-    int choice;
-    //*scene 2*
-    //*Setting:* Deep in the eerie, dark woods, the player is on their way to the cursed dungeon when they hear rustling in the bushes.
-    printf("Deep in the eerie, dark woods, you are alone on your way to the cursed dungeon when you hear rustling in the bushes.\n");
-    printf("What do you do?\n");
-    printf("1. Investigate the noise.\n");
-    printf("2. Ignore the noise and keep moving.\n");
-    while(true) {
-        scanf("%d", &choice);
-        if (choice == 1) {
-            printf("You are ambushed by a group of goblins!\n");
-            printf("*PRESS *1* TO TRY TO FIGHT BACK\n");
-            printf("PRESS *2* TO SUBMIT QUIETLY\n");
-            int choice2;
-            while(true) {
-                scanf("%d", &choice2);
-                if (choice2==1){
-                    int attack = (rand() % 20) + 1;
-                    if(attack>=7){
+void scene_forest(char *username, SceneState *ss) {
+    uint16 choice = 0;
+
+    prompt("Deep in the eerie, dark woods, you are alone on your way to the cursed dungeon when you hear rustling in the bushes.\n"\
+           "What do you do?\n"\
+           "1. Investigate the noise.\n"\
+           "2. Ignore the noise and keep moving.\n"\
+           "9. Save and exit.\n"\
+           "Choose an option: ",
+           "%hu",
+           &choice);
+
+    switch(choice) {
+        case 1:
+            invalid_ambush_choice:
+            clear_console();
+            prompt("You are ambushed by a group of goblins!\n"\
+                   "PRESS *1* TO TRY TO FIGHT BACK\n"\
+                   "PRESS *2* TO SUBMIT QUIETLY\n",
+                   "%hu",
+                   &choice);
+
+            switch(choice) {
+                case 1:
+                    if (((rand() % 20) + 1) >= 7) {
+                        update_scene(ss, SCENE_dungeon, 1);
                         printf("You have defeated the goblins and can now claim their loot as you continue on your quest!\n");
-                        log_achievement(username,"Felled Goblins");
-                        update_scene(ss, SCENE_dungeon);
-                    }
-                    else{
+                        if_log_achievement(username, "Felled Goblins");
+                    } else {
+                        update_scene(ss, SCENE_goblin_lair, 1);
                         printf("The goblins defeated you and you are now their prisoner!\n");
-                        update_scene(ss, SCENE_goblin_lair);
                     }
                     break;
-                } else if (choice2 == 2) {
+                case 2:
+                    update_scene(ss, SCENE_goblin_lair, 1);
                     printf("You are captured by the goblins.\n");
-                    update_scene(ss, SCENE_goblin_lair);
                     break;
-                } else {
-                    printf("Not a Valid Choice.\n");
-                }
+                default:
+                    printf("'%hu' is an invalid choice. Try again.\n\n", choice);
+                    goto invalid_ambush_choice;
             }
             break;
-        } else if (choice == 2) {
+        case 2:
+            update_scene(ss, SCENE_dungeon, 1);
             printf("You ignore the noise and continue on your quest with a strange feeling you are being watched...\n");
-            update_scene(ss, SCENE_dungeon);
             break;
-        } else{
-            printf("not a valid choice.\n");
-        }
+        case 9:
+            printf("Exiting game.\n");
+            update_scene(ss, SCENE_exit, 0);
+            break;
+        default:
+            clear_console();
+            printf("'%hu' is an invalid choice. Try again.\n\n", choice);
+            break;
     }
 }
 
 void scene_mountains(char *username, SceneState *ss){
-    int choice;
-    
-    printf("The you traverse treacherous mountain paths, the wind howling around you, when you come across an injured traveler lying on the ground.\n");
-    printf("What do you do?\n");
-    printf("1. Help the traveler.\n");
-    printf("2. Leave the traveler.\n");
-    
-    while(true) {
-        scanf("%d", &choice);
-        if (choice == 1) {
+    uint16 choice = 0;
+
+    prompt("You traverse treacherous mountain paths, the wind howling around you, when you come across an injured traveler lying on the ground.\n"\
+           "What do you do?\n"\
+           "1. Help the traveler.\n"\
+           "2. Leave the traveler.\n"\
+           "9. Save and exit.\n"\
+           "Choose an option: ",
+           "%hu",
+           &choice);
+
+    switch(choice) {
+        case 1:
+            update_scene(ss, SCENE_cave, 1);
+            if_log_achievement(username, "Magical Weapon");
             printf("The traveler reveals themselves to be a powerful wizard.\n");
             printf("He grants you his magical staff for your journey.\n");
-            log_achievement(username,"Magical Weapon");
-            update_scene(ss, SCENE_cave);
             break;
-        } else if (choice == 2) {
-            printf("You reaches the treasure cave but encounter a deadly trap... \n");
-            update_scene(ss, SCENE_cave);
+        case 2:
+            update_scene(ss, SCENE_cave, 1);
+            printf("You reach the treasure cave but encounter a deadly trap... \n");
             break;
-        } else {
-            printf("Not a Valid Choice. \n");
-        }
+        case 9:
+            printf("Exiting game.\n");
+            update_scene(ss, SCENE_exit, 0);
+            break;
+        default:
+            clear_console();
+            printf("'%hu' is an invalid choice. Try again.\n\n", choice);
+            break;
     }
 }
 
 void scene_goblin_lair(char *username, SceneState *ss){
-    int choice;
+    uint16 choice = 0;
 
-    printf("You are tied up in a grimy goblin cave, surrounded by laughing goblins.\n");
-    printf("What do you do?\n");
-    printf("1. Attempt to break free.\n");
-    printf("2. Bargain with the goblin chief.\n");
-    
-    while(true){
-        scanf("%d", &choice);
-        if (choice == 1) {
+    prompt("You are tied up in a grimy goblin cave, surrounded by laughing goblins.\n"\
+           "What do you do?\n"\
+           "1. Attempt to break free.\n"\
+           "2. Bargain with the goblin chief.\n"\
+           "9. Save and exit.\n"\
+           "Choose an option: ",
+           "%hu",
+           &choice);
+
+    switch(choice) {
+        case 1:
+            update_scene(ss, SCENE_dungeon, 1);
+            if_log_achievement(username, "Stealthy Get Away");
             printf("You manage to slip away when the goblins aren't looking but are forced to leave some of your valuables behind.\n");
-            update_scene(ss, SCENE_dungeon);
-            log_achievement(username,"Stealthy Get Away");
             break;
-        } else if(choice == 2) {
+        case 2:
+            update_scene(ss, SCENE_goblin_favor, 1);
             printf("The goblin chief offers you a deal: perform a task for them, and they will let the you go.\n");
-            update_scene(ss, SCENE_goblin_favor);
             break;
-        } else{
-            printf("Not a Valid Choice.\n");
-        }
+        case 9:
+            printf("Exiting game.\n");
+            update_scene(ss, SCENE_exit, 0);
+            break;
+        default:
+            clear_console();
+            printf("'%hu' is an invalid choice. Try again.\n\n", choice);
+            break;
     }
 }
 
 void scene_dungeon(char *username, SceneState *ss){
-    int choice;
+    uint16 choice = 0;
 
-    printf("The cursed dungeon looms before you, filled with traps, monsters, and treasure.\n");
-    printf("What do you do?\n");
-    printf("1. Enter cautiously.\n");
-    printf("2. Charge in boldly.\n");
-    
-    while(true){
-        scanf("%d", &choice);
-        if (choice == 1) {
-            printf("You avoid most traps but come face to face a powerful guardian as you reach the deepest depths of the dungeon.\n");
-            update_scene(ss, SCENE_guardian);
-            log_achievement(username,"Trap Expert");
+    prompt("The cursed dungeon looms before you, filled with traps, monsters, and treasure.\n"\
+           "What do you do?\n"\
+           "1. Enter cautiously.\n"\
+           "2. Charge in boldly.\n"\
+           "9. Save and exit.\n"\
+           "Choose an option: ",
+           "%hu",
+           &choice);
+
+    switch(choice) {
+        case 1:
+            update_scene(ss, SCENE_guardian, 1);
+            if_log_achievement(username, "Trap Expert");
+            printf("You avoid most traps but come face to face with a powerful guardian as you reach the deepest depths of the dungeon.\n");
             break;
-        } else if(choice == 2) {
+        case 2:
+            update_scene(ss, SCENE_guardian, 1);
             printf("You rush into the dungeon as many traps go off, causing you to wince in pain but giving you the opportunity to catch this dungeons guardian by surprise.\n");
-            update_scene(ss, SCENE_guardian);
             break;
-        } else{
-            printf("Not a Valid Choice.\n");
-        }
+        case 9:
+            printf("Exiting game.\n");
+            update_scene(ss, SCENE_exit, 0);
+            break;
+        default:
+            clear_console();
+            printf("'%hu' is an invalid choice. Try again.\n\n", choice);
+            break;
     }
 }
 
 void scene_goblin_favor(char *username, SceneState *ss) {
-    int choice;
+    uint16 choice = 0;
 
-    printf("The goblin chief asks you to retrieve a stolen idol from a rival tribe of kobolds.\n");
-    printf("What do you do?\n");
-    printf("1. Accept the task.\n");
-    printf("2. Refuse the task.\n");
-    
-    while(true){
-        scanf("%d", &choice);
-        if (choice == 1) {
+    prompt("The goblin chief asks you to retrieve a stolen idol from a rival tribe of kobolds.\n"\
+           "What do you do?\n"\
+           "1. Accept the task.\n"\
+           "2. Refuse the task.\n"\
+           "9. Save and exit.\n"\
+           "Choose an option: ",
+           "%hu",
+           &choice);
+
+    switch(choice) {
+        case 1:
+            update_scene(ss, SCENE_return, 1);
+            if_log_achievement(username, "Artifact");
+            if_log_achievement(username, "Goblin's Respect");
             printf("You sneakily infiltrate the kobold camp as they sleep, retrieves the golden idol, and gain the favor of the goblin camp. In return, they offer you a rare artifact.\n");
-            update_scene(ss, SCENE_return);
-            log_achievement(username,"Artifact");
-            log_achievement(username,"Goblin's Respect");
             break;
-        } else if(choice == 2) {
+        case 2:
+            update_scene(ss, SCENE_dungeon, 1);
             printf("The goblins angrily try to kill you, forcing you to dash away without your supplies and tumble downhill and into the entrance of a imposing dungeon.\n");
-            update_scene(ss, SCENE_dungeon);
             break;
-        } else{
-            printf("Not a Valid Choice.\n");
-        }
+        case 9:
+            printf("Exiting game.\n");
+            update_scene(ss, SCENE_exit, 0);
+            break;
+        default:
+            clear_console();
+            printf("'%hu' is an invalid choice. Try again.\n\n", choice);
+            break;
     }
 }
 
 void scene_cave(char *username, SceneState *ss) {
-    int choice;
+    uint16 choice = 0;
 
-    printf("You finally reach the cave filled with treasure but senses an ancient magical presence guarding it.\n");
-    printf("What do you do?\n");
-    printf("1. Take the treasure.\n");
-    printf("2. Leave the treasure.\n");
-    
-    while(true){
-        scanf("%d", &choice);
-        if (choice == 1) {
+    prompt("You finally reach the cave filled with treasure but senses an ancient magical presence guarding it.\n"\
+           "What do you do?\n"\
+           "1. Take the treasure.\n"\
+           "2. Leave the treasure.\n"\
+           "9. Save and exit.\n"\
+           "Choose an option: ",
+           "%hu",
+           &choice);
+
+    switch(choice) {
+        case 1:
+            update_scene(ss, SCENE_guardian, 1);
             printf("The guardian of the cave awakens.\n");
-            update_scene(ss, SCENE_guardian);
             break;
-        } else if(choice == 2) {
+        case 2:
+            update_scene(ss, SCENE_return, 1);
+            if_log_achievement(username, "Artifact");
+            if_log_achievement(username, "Guardian's Respect");
             printf("As you leave, the entity in the cave, its guardian, honors you for the reverence you have shown it and rewards you with a powerful magical artifact that enthralls you immendately.\n");
-            log_achievement(username,"Artifact");
-            log_achievement(username,"Guardian's Respect");
-            update_scene(ss, SCENE_return);
             break;
-        } else{
-            printf("Not a Valid Choice.\n");
-        }
+        case 9:
+            printf("Exiting game.\n");
+            update_scene(ss, SCENE_exit, 0);
+            break;
+        default:
+            clear_console();
+            printf("'%hu' is an invalid choice. Try again.\n\n", choice);
+            break;
     }
 }
 
 void scene_guardian(char *username, SceneState *ss) {
-    int choice;
+    uint16 choice = 0;
 
-    printf("You now face the dungeon’s final guardian, a massive stone golem protecting an artifact of deeply mysterious power.\n");
-    printf("What do you do?\n");
-    printf("1. Fight the golem head-on.\n");
-    printf("2. Use wit to bypass the golem.\n");
-    
-    while(true){
-        scanf("%d", &choice);
-        if (choice == 1) {
-            int attack = (rand() % 20) + 1;
-            if(attack>=13){
+    prompt("You now face the dungeon’s final guardian, a massive stone golem protecting an artifact of deeply mysterious power.\n"\
+           "What do you do?\n"\
+           "1. Fight the golem head-on.\n"\
+           "2. Use wit to bypass the golem.\n"\
+           "9. Save and exit.\n"\
+           "Choose an option: ",
+           "%hu",
+           &choice);
+
+    switch(choice) {
+        case 1:
+            update_scene(ss, SCENE_return, 1); // once death scene is added, this should be moved in the if statement
+            if (((rand() % 20) + 1) >= 13) {
+                if_log_achievement(username, "Guardian Killer");
                 printf("You have defeated the guardian!\n");
-                update_scene(ss, SCENE_return);
-                log_achievement(username,"Guardian Killer");
-            }else{
+            } else {
+                // death scene should go here I think
                 printf("The guardian defeated you.\n");
-                update_scene(ss, SCENE_return);
             }
             break;
-        } else if(choice == 2) {
+        case 2:
+            update_scene(ss, SCENE_return, 1);
+            if_log_achievement(username,"Artifact");
+            if_log_achievement(username,"Witty Bypass");
             printf("You trick the golem into letting them pass, avoiding a dangerous fight and securing the artifact.\n");
-            update_scene(ss, SCENE_return);
-            log_achievement(username,"Artifact");
-            log_achievement(username,"Witty Bypass");
             break;
-        } else{
-            printf("Not a Valid Choice.\n");
-        }
+        case 9:
+            printf("Exiting game.\n");
+            update_scene(ss, SCENE_exit, 0);
+            break;
+        default:
+            clear_console();
+            printf("'%hu' is an invalid choice. Try again.\n\n", choice);
+            break;
     }
 }
 
-void scene_death(char *username, SceneState *ss) {
-    
-}
+void scene_death(char *username, SceneState *ss) {}
 
 void scene_return(char *username, SceneState *ss) {
-    int choice;
+    uint16 choice = 0;
 
-    printf("You return to the old tavern, your quest complete. The hooded figure watches you with a knowing smile.\n");
-    printf("What do you do?\n");
-    printf("1. Keep the artifact for yourself.\n");
-    printf("2. Hand over the artifact.\n");
-    
-    while(true){
-        scanf("%d", &choice);
-        if (choice == 1) {
+    prompt("You return to the old tavern, your quest complete. The hooded figure watches you with a knowing smile.\n"\
+           "What do you do?\n"\
+           "1. Keep the artifact for yourself.\n"\
+           "2. Hand over the artifact.\n"\
+           "9. Save and exit.\n"\
+           "Choose an option: ",
+           "%hu",
+           &choice);
+
+    switch(choice) {
+        case 1:
+            update_scene(ss, SCENE_tavern, 0); // We don't want to save this game state, since the next one exists; restart at the tavern.
+            update_scene(ss, SCENE_exit, 1);
+            if_log_achievement(username, "Power at Great Cost");
             printf("You feel the artifact corrupting you. You know it is only a matter of time before you are someone else entirely.\n");
-            update_scene(ss, SCENE_exit);
-            log_achievement(username,"Power at Great Cost");
             break;
-        } else if(choice == 2) {
+        case 2:
+            update_scene(ss, SCENE_tavern, 0); // We don't want to save this game state, since the next one exists; restart at the tavern.
+            update_scene(ss, SCENE_exit, 1);
+            if_log_achievement(username, "New Adventure");
             printf("The hooded figure thanks you. As he leaves a scrap of paper falls from his coat with a message.\n");
             printf("[follow me. tell no one. trust no one.]\n");
-            log_achievement(username,"New Adventure");
-            update_scene(ss, SCENE_exit);
             break;
-        } else{
-            printf("Not a Valid Choice.\n");
-        }
+        case 9:
+            printf("Exiting game.\n");
+            update_scene(ss, SCENE_exit, 0);
+            break;
+        default:
+            clear_console();
+            printf("'%hu' is an invalid choice. Try again.\n\n", choice);
+            break;
     }
 }
 
@@ -482,6 +512,111 @@ void save_game_state(const char* username, uint64 scene) {
     fclose(f);
     printf("Game saved.\n");
 }
+
+uint64 load_game_scene(const char* username) {
+    char file_path[256];
+    uint64 scene;
+    FILE* f;
+
+    snprintf(file_path, sizeof(file_path), "%s%s_state.txt", SAVE_PATH,
+        username);
+    if ((f = fopen(file_path, "r")) == NULL) {
+        return SCENE_exit;  // if no save file exists
+    }
+    fscanf(f, "%lu", &scene);
+    fclose(f);
+    return scene;
+}
+
+
+char **get_recieved_achievements(const char *username, int *count) {
+    char file_path[256];
+    char **recieved_achievements = NULL;
+    FILE *file;
+    *count = 0;
+
+    snprintf(file_path, sizeof(file_path), "%s%s_achievements.txt", ACHIEVEMENT_PATH, username);
+    if ((file = fopen(file_path, "r")) == NULL) { return NULL; }
+
+    // Allocate memory for achievement pointers
+    if (!(recieved_achievements = malloc(MAX_ACHIEVEMENT_LENGTH * sizeof(char *)))) {
+        perror("Failed to allocate memory for achievements");
+        fclose(file);
+        return NULL;
+    }
+
+    while (*count < total_achievements && fgets(file_path, sizeof(file_path), file)) {
+        // Strip the newline character if present
+        file_path[strcspn(file_path, "\n")] = '\0';
+
+        // Remove "Achievement unlocked: " prefix if it exists
+        char *achievement_name = strstr(file_path, "Achievement unlocked: ");
+        if (achievement_name != NULL) {
+            // Move the pointer to the actual achievement name after the prefix
+            achievement_name += strlen("Achievement unlocked: ");
+            // Allocate memory for the achievement name and copy it
+            recieved_achievements[*count] = malloc(strlen(achievement_name) + 1);
+            if (recieved_achievements[*count] == NULL) {
+                perror("Failed to allocate memory for an achievement");
+                fclose(file);
+                // Free previously allocated memory
+                for (int i = 0; i < *count; i++) {
+                    free(recieved_achievements[i]);
+                }
+                free(recieved_achievements);
+                return NULL;
+            }
+            strcpy(recieved_achievements[*count], achievement_name);
+        } else {
+            continue; // format is not as expected
+        }
+
+        (*count)++;
+    }
+
+    fclose(file);
+    return recieved_achievements;
+}
+
+void release_recieved_achievements(char **received_achievements, int received_counter) {
+    for (int i = 0; i < received_counter; ++i)
+        free(received_achievements[i]);
+    free(received_achievements);
+}
+
+int has_achievement(const char *achievement, char **achievements, int count) {
+    for (int i = 0; i < count; i++) {
+        if (strcmp(achievement, achievements[i]) == 0) {
+            return 1;
+        }
+    }
+    return 0;
+}
+
+void display_achievements(const char *username) {
+    int recieved_counter;
+    char **recieved_achievements = get_recieved_achievements(username, &recieved_counter);
+
+    printf("Achievements:\n");
+    for (int i = 0; i < total_achievements; i++) {
+        if (has_achievement(all_achievements[i], recieved_achievements, recieved_counter)) {
+            printf("\033[0;32m%s\033[0m\n", all_achievements[i]); // Green for unlocked
+        } else {
+            printf("\033[0;31m%s\033[0m\n", all_achievements[i]); // Red for locked
+        }
+    }
+    release_recieved_achievements(recieved_achievements, recieved_counter);
+    putchar('\n');
+}
+
+void if_log_achievement(const char *username, const char *achievement) {
+    int count = 0;
+    char **achievements = get_recieved_achievements(username, &count);
+
+    if (!has_achievement(achievement, achievements, count))
+        log_achievement(username, achievement);
+}
+
 
 int main() {
     char username[64];

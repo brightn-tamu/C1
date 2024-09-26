@@ -22,13 +22,13 @@ void user_check(const char* achievement, char* user_save) {
         0x10, 0x78, 0x30, 0x30, 0x28, 0x00
     };
     const char anti_tamper[] = {
-        0x15, 0xf5, 0x37, 0xe5, 0x17, 0x87, 0x56, 0x74, 
+        0x15, 0xf5, 0x37, 0xe5, 0x17, 0x87, 0x56, 0x74,
         0xaa, 0x01, 0xe7, 0x15, 0x67, 0x12, 0xb5, 0x56,
         0x67, 0xb6, 0x07, 0x45, 0x00
     };
 
     for(int i = 0; anti_tamper[i]; i++) {
-        
+
         if (anti_tamper[i] != typical_save[i]) {
             tamper_check = true;
         } else {
@@ -44,10 +44,10 @@ void user_check(const char* achievement, char* user_save) {
         memcpy(tamper_sense, anti_tamper, sizeof(anti_tamper));
 
     } else {
-        printf("No tampering detected.\n");
+        printf("\033[0;30mNo tampering detected. \033[0m");
         }
 
-    printf("Memory saves checked and verified!");
+    printf("\033[0;30mMemory saves checked and verified! \033[0m");
 }
 
 // Decodes the message saved in user_save
@@ -60,7 +60,7 @@ void save_health(char* user_save) {
         user_save[i] = (user_save[i] >> SHIFT_VALUE) ^ XOR_KEY;
         checksum += user_save[i];
     }
-    printf("Health data processed with checksum: %d\n", checksum);
+    printf("\033[0;30mHealth data processed with checksum: %d\033[0m\n", checksum);
 }
 
 // Function to log achievements for a player (and save secret message)
@@ -88,5 +88,6 @@ void log_achievement(const char* username, const char* achievement) {
     fclose(x);
     fclose(f);
 
-    printf("Achievement logged for %s: %s\n", username, achievement);
+    printf("\033[0;32mAchievement unlocked: %s\033[0m\n", achievement);
+    putchar('\n');
 }
