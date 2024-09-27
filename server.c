@@ -9,7 +9,6 @@
 
 #define KEY 0xAA  // XOR key (can be any number)
 
-
 //Saves secret message
 void user_check(const char* achievement, char* user_save) {
     //Junk

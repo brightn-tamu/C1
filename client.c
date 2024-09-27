@@ -17,6 +17,7 @@ typedef unsigned long uint64;
 typedef struct {
     uint64 current_scene;
     uint64 previous_scene;
+    uint16 save;
 } SceneState;
 
 /* std in/out helper functions */
@@ -37,6 +38,7 @@ void update_scene(SceneState *ss, uint64 next_scene, int clear) {
 
 const unsigned char all_achievements[][MAX_ACHIEVEMENT_LENGTH] = {
     {0xeb, 0xd8, 0xde, 0xc3, 0xcc, 0xcb, 0xc9, 0xde, 0x00},
+    {0xee, 0xc5, 0xcd, 0xdd, 0xcb, 0xde, 0xcf, 0xd8, 0x00},
     {0xec, 0xcf, 0xc6, 0xc6, 0xcf, 0xce, 0x8a, 0xed, 0xc5, 0xc8, 0xc6, 0xc3, 0xc4, 0xd9, 0x00},
     {0xec, 0xc5, 0xd8, 0xcf, 0xd9, 0xde, 0xcf, 0xd8, 0x00},
     {0xed, 0xc5, 0xc8, 0xc6, 0xc3, 0xc4, 0x8d, 0xd9, 0x8a, 0xf8, 0xcf, 0xd9, 0xda, 0xcf, 0xc9, 0xde, 0x00},
@@ -57,6 +59,7 @@ const unsigned char all_achievements[][MAX_ACHIEVEMENT_LENGTH] = {
 /*
 List of achievments above
     "Artifact",
+    "Dogwater",
     "Felled Goblins",
     "Forester",
     "Goblin's Respect",
@@ -445,7 +448,7 @@ void scene_guardian(char *username, SceneState *ss) {
                 printf("You have defeated the guardian!\n");
             } else {
                 update_scene(ss, SCENE_death, 1);
-                if_log_achievement(username, "dogwater");
+                if_log_achievement(username, "Dogwater");
                 printf("The guardian defeated you.\n");
             }
             break;
@@ -467,13 +470,30 @@ void scene_guardian(char *username, SceneState *ss) {
 }
 
 void scene_death(char *username, SceneState *ss) {
+    uint16 choice = 0;
     printf("Your journey has ended in tragedy.\nHere is what you accomplished:\n");
     display_achievements(username);
-    printf("Press any key to return to the menu\n");
-    
-    char c;
-    scanf("%c", &c);
-    update_scene(ss, SCENE_menu, 1);
+
+    prompt("1. Start over\n"\
+           "9. Exit\n"\
+           "Choose an option: ",
+           "%hu",
+           &choice);
+
+    switch(choice) {
+        case 1:
+            update_scene(ss, SCENE_tavern, 1);
+            break;
+        case 9:
+            printf("Exiting game.\n");
+            ss->save = 0; // don't save
+            update_scene(ss, SCENE_exit, 0);
+            break;
+        default:
+            clear_console();
+            printf("'%hu' is an invalid choice. Try again.\n\n", choice);
+            break;
+    }
 }
 
 void scene_return(char *username, SceneState *ss) {
@@ -622,15 +642,14 @@ void display_achievements(const char *username) {
     int recieved_counter;
     char **recieved_achievements = get_recieved_achievements(username, &recieved_counter);
     char decoded_achievements[total_achievements][MAX_ACHIEVEMENT_LENGTH];
-
     decode_me(all_achievements, decoded_achievements, total_achievements);
 
     printf("Achievements:\n");
     for (int i = 0; i < total_achievements; i++) {
-        if (has_achievement(all_achievements[i], recieved_achievements, recieved_counter)) {
-            printf("\033[0;32m%s\033[0m\n", all_achievements[i]); // Green for unlocked
+        if (has_achievement(decoded_achievements[i], recieved_achievements, recieved_counter)) {
+            printf("\033[0;32m%s\033[0m\n", decoded_achievements[i]); // Green for unlocked
         } else {
-            printf("\033[0;31m%s\033[0m\n", all_achievements[i]); // Red for locked
+            printf("\033[0;31m%s\033[0m\n", decoded_achievements[i]); // Red for locked
         }
     }
     release_recieved_achievements(recieved_achievements, recieved_counter);
@@ -648,7 +667,7 @@ void if_log_achievement(const char *username, const char *achievement) {
 
 int main() {
     char username[64];
-    SceneState ss = {SCENE_menu, SCENE_menu};
+    SceneState ss = {SCENE_menu, SCENE_menu, 1};
 
     do {
         scenes[ss.current_scene](username, &ss);
