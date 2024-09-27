@@ -7,10 +7,11 @@
 #include <stdbool.h>
 #include <inttypes.h>
 
+
 #define SAVE_PATH "./saved_games/"
 #define ACHIEVEMENT_PATH "./achievements/"
 #define MAX_ACHIEVEMENT_LENGTH 50
-
+#define KEY 0xAA  // XOR key (can be any number)
 
 typedef unsigned short uint16;
 typedef unsigned long uint64;
@@ -108,6 +109,17 @@ static void  (*scenes[])(char *, SceneState *) = {
 [SCENE_cave] =           scene_cave,
 [SCENE_return] =         scene_return,
 };
+
+// Decoder function
+void decode(const unsigned char* encoded_message, char* decoded_message) {
+    int i = 0;
+    while (encoded_message[i] != '\0') {
+        // Reverse XOR
+        decoded_message[i] = (char)((encoded_message[i]) ^ KEY);
+        i++;
+    }
+    decoded_message[i] = '\0'; // Null-terminate the decoded message
+}
 
 /* This is always the final scene - the program is terminated from here */
 void scene_exit(char *username, SceneState *ss) {
@@ -611,9 +623,18 @@ int has_achievement(const char *achievement, char **achievements, int count) {
     return 0;
 }
 
+void decode_achievements(const char encoded[][MAX_ACHIEVEMENT_LENGTH], char decoded[][MAX_ACHIEVEMENT_LENGTH], int total) {
+    for (int i = 0; i < total; i++) {
+        decode((const unsigned char *)encoded[i], decoded[i]);
+    }
+}
+
 void display_achievements(const char *username) {
     int recieved_counter;
     char **recieved_achievements = get_recieved_achievements(username, &recieved_counter);
+    char decoded_achievements[total_achievements][MAX_ACHIEVEMENT_LENGTH];
+
+    decode_achievements(achievements, decoded_achievements, total_achievements);
 
     printf("Achievements:\n");
     for (int i = 0; i < total_achievements; i++) {
