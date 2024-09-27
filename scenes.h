@@ -10,3 +10,4 @@
 #define SCENE_guardian       8
 #define SCENE_cave           9
 #define SCENE_return         10
+#define SCENE_death          11
