@@ -471,7 +471,8 @@ void scene_death(char *username, SceneState *ss) {
     display_achievements(username);
     printf("Press any key to return to the menu\n");
     
-    scanf("%c");
+    char c;
+    scanf("%c", &c);
     update_scene(ss, SCENE_menu, 1);
 }
 
