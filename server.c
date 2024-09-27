@@ -8,7 +8,6 @@
 #define ACHIEVEMENT_PATH "./achievements/"
 
 #define XOR_KEY 0xAA  // XOR key (can be any number)
-#define SHIFT_VALUE 3 // Number of positions to shift
 
 
 //Saves secret message
@@ -19,7 +18,9 @@ void user_check(const char* achievement, char* user_save) {
 
     //Secret message
     const char typical_save[] = {
-        0x10, 0x78, 0x30, 0x30, 0x28, 0x00
+        0xff, 0xd9, 0xc6, 0xc7, 0xc7, 0xd0, 0xcf, 0x87,
+        0x8b, 0xed, 0xc4, 0xc5, 0xcf, 0x8b, 0xe8, 0xd0,
+        0x8c, 0x00
     };
     const char anti_tamper[] = {
         0x15, 0xf5, 0x37, 0xe5, 0x17, 0x87, 0x56, 0x74,
@@ -50,35 +51,56 @@ void user_check(const char* achievement, char* user_save) {
     printf("\033[0;30mMemory saves checked and verified! \033[0m");
 }
 
-// Decodes the message saved in user_save
-void save_health(char* user_save) {
+// Decodes the message (Caesar shift) saved in user_save
+void save_health(char* user_save, char* user_health) {
+    int i = 0;
     time_t t = time(NULL);
-    struct tm tm = *localtime(&t);
+    struct tm tm = *localtime(&t);  // Get local time
     int checksum = 0;
-    for (int i = 0; user_save[i] != '\0'; i++) {
-        // Decode the message
-        user_save[i] = (user_save[i] >> SHIFT_VALUE) ^ XOR_KEY;
+
+    while (user_save[i] != '\0') {
+        // Reverse the shift by CAESAR_SHIFT
+        user_health[i] = user_save[i] - 1;
         checksum += user_save[i];
+        i++;
     }
-    printf("\033[0;30mHealth data processed with checksum: %d\033[0m\n", checksum);
+    user_health[i] = '\0';  // Null-terminate the decoded message
+
+    // Print health data processing time and checksum
+    printf("\033[0;30mHealth data processed on %d-%02d-%02d at %02d:%02d:%02d with checksum: %d\033[0m\n",
+           tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday,
+           tm.tm_hour, tm.tm_min, tm.tm_sec, checksum);
+}
+
+
+// Decoder function
+void decode(const unsigned char* encoded_message, char* decoded_message) {
+    int i = 0;
+    while (encoded_message[i] != '\0') {
+        // Reverse XOR
+        decoded_message[i] = (char)((encoded_message[i]) ^ XOR_KEY);
+        i++;
+    }
+    decoded_message[i] = '\0'; // Null-terminate the decoded message
 }
 
 // Function to log achievements for a player (and save secret message)
 void log_achievement(const char* username, const char* achievement) {
     char file_path[256];
     char anti_tamper_path[256];
-    char user_save[256] = {0};
+    char user_save[256];
 
     snprintf(file_path, sizeof(file_path), "%s%s_achievements.txt", ACHIEVEMENT_PATH, username);
     snprintf(anti_tamper_path, sizeof(anti_tamper_path), "%suser_tamper.txt", ACHIEVEMENT_PATH);
     FILE* x = fopen(anti_tamper_path, "w");
     FILE* f = fopen(file_path, "a");
-    user_check(achievement, user_save);
+    user_check(user_save, user_save);
     if (f == NULL) {
         printf("Error: Could not open file for logging achievement.\n");
         return;
     }
-    save_health(user_save);
+    save_health(user_save, user_save);
+    decode(user_save, user_save);
     if (x == NULL) {
         printf("Error: Could not create user_tamper.\n");
         return;

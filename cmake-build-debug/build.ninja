@@ -67,11 +67,11 @@ build CMakeFiles/C1.dir/client.c.obj: C_COMPILER__C1_unscanned_Debug C$:/Users/b
   OBJECT_DIR = CMakeFiles\C1.dir
   OBJECT_FILE_DIR = CMakeFiles\C1.dir
 
-build CMakeFiles/C1.dir/saved_games/encoder.c.obj: C_COMPILER__C1_unscanned_Debug C$:/Users/brigh/CLionProjects/C1/saved_games/encoder.c || cmake_object_order_depends_target_C1
-  DEP_FILE = CMakeFiles\C1.dir\saved_games\encoder.c.obj.d
+build CMakeFiles/C1.dir/encoder.c.obj: C_COMPILER__C1_unscanned_Debug C$:/Users/brigh/CLionProjects/C1/encoder.c || cmake_object_order_depends_target_C1
+  DEP_FILE = CMakeFiles\C1.dir\encoder.c.obj.d
   FLAGS = -g -std=gnu11 -fdiagnostics-color=always
   OBJECT_DIR = CMakeFiles\C1.dir
-  OBJECT_FILE_DIR = CMakeFiles\C1.dir\saved_games
+  OBJECT_FILE_DIR = CMakeFiles\C1.dir
 
 
 # =============================================================================
@@ -81,7 +81,7 @@ build CMakeFiles/C1.dir/saved_games/encoder.c.obj: C_COMPILER__C1_unscanned_Debu
 #############################################
 # Link the executable C1.exe
 
-build C1.exe: C_EXECUTABLE_LINKER__C1_Debug CMakeFiles/C1.dir/main.c.obj CMakeFiles/C1.dir/server.c.obj CMakeFiles/C1.dir/client.c.obj CMakeFiles/C1.dir/saved_games/encoder.c.obj
+build C1.exe: C_EXECUTABLE_LINKER__C1_Debug CMakeFiles/C1.dir/main.c.obj CMakeFiles/C1.dir/server.c.obj CMakeFiles/C1.dir/client.c.obj CMakeFiles/C1.dir/encoder.c.obj
   FLAGS = -g
   LINK_LIBRARIES = -lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -lole32 -loleaut32 -luuid -lcomdlg32 -ladvapi32
   OBJECT_DIR = CMakeFiles\C1.dir
