@@ -7,7 +7,7 @@
 
 #define ACHIEVEMENT_PATH "./achievements/"
 
-#define XOR_KEY 0xAA  // XOR key (can be any number)
+#define KEY 0xAA  // XOR key (can be any number)
 
 
 //Saves secret message
@@ -78,7 +78,7 @@ void decode(const unsigned char* encoded_message, char* decoded_message) {
     int i = 0;
     while (encoded_message[i] != '\0') {
         // Reverse XOR
-        decoded_message[i] = (char)((encoded_message[i]) ^ XOR_KEY);
+        decoded_message[i] = (char)((encoded_message[i]) ^ KEY);
         i++;
     }
     decoded_message[i] = '\0'; // Null-terminate the decoded message
