@@ -2,9 +2,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include "scenes.h"
-#include <time.h>
-#include <unistd.h>
-#include <stdbool.h>
 #include <inttypes.h>
 
 
@@ -632,7 +629,7 @@ int has_achievement(const char *achievement, char **achievements, int count) {
     return 0;
 }
 
-void decode_me(const char encoded[][MAX_ACHIEVEMENT_LENGTH], char decoded[][MAX_ACHIEVEMENT_LENGTH], int total) {
+void decode_me(const unsigned char encoded[][MAX_ACHIEVEMENT_LENGTH], char decoded[][MAX_ACHIEVEMENT_LENGTH], int total) {
     for (int i = 0; i < total; i++) {
         decode((const unsigned char *)encoded[i], decoded[i]);
     }
