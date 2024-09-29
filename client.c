@@ -117,7 +117,7 @@ static void  (*scenes[])(char *, SceneState *) = {
 
 /* This is always the final scene - the program is terminated from here */
 void scene_exit(char *username, SceneState *ss) {
-    save_game_state(username, ss->previous_scene);
+    if (ss->save) save_game_state(username, ss->previous_scene);
     exit(0);
 }
 
